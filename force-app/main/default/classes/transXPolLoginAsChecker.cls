@@ -12,9 +12,14 @@ global class transXPolLoginAsChecker implements TxnSecurity.EventCondition, TxnS
             // Retrieve admin user details
             User adminUser = [SELECT Id FROM User WHERE Username = :liaEvent.DelegatedUsername LIMIT 1];
 
-            // Call the @future method with raw field values
-            LoginAsEventFutureHandler.insertLoginEvent(adminUser.Id, liaEvent.UserId, liaEvent.LoginKey, liaEvent.LoginHistoryId, liaEvent.EventIdentifier );
-            System.debug('Future method called for Login_As_Event__c insert');
+            // Enqueue the Queueable job with raw field values
+            String jobId = System.enqueueJob(
+                new LoginAsEventQueueableHandler(
+                    adminUser.Id, liaEvent.UserId, liaEvent.LoginKey, 
+                    liaEvent.LoginHistoryId, liaEvent.EventIdentifier
+                )
+            );
+            System.debug('Queueable job enqueued with Job ID: ' + jobId);
             return true;
         }
 
